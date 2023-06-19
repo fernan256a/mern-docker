@@ -1,0 +1,45 @@
+version: '3'
+
+services:
+  ui:
+    build: ui
+    container_name: react-ui
+    ports:
+      - "3000:3000"
+    environment:
+      REACT_APP_HOST: "http://localhost"
+    volumes:
+      - ./ui/app:/srv/app/ui/app
+      - ./ui/public:/srv/app/ui/public
+    command: npm run dev
+
+  api:
+    build: api
+    container_name: express-api
+    ports:
+      - "3001:3000"
+      - "9229:9229"
+    restart: on-failure
+    volumes:
+      - ./api/:/srv/app/api
+    depends_on:
+      - mongodb
+    command: npm run start
+
+  mongodb:
+    build: ./mongo
+    container_name: mongo-db
+    restart: always
+    volumes:
+      - "./mongo/data/:/data/db/"
+    ports:
+      - "27017:27017"
+    entrypoint:  ./scripts/init.sh
+
+  proxy:
+    build: ./nginx
+    container_name: nginx-proxy
+    depends_on:
+      - ui
+    ports:
+      - "80:80"
